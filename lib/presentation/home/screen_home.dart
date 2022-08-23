@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'package:after_layout/after_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:paytm_app/core/colors.dart';
 import 'package:paytm_app/presentation/home/widgets/category_card.dart';
@@ -18,13 +15,32 @@ class ScreenHome extends StatefulWidget {
   State<ScreenHome> createState() => _ScreenHomeState();
 }
 
-class _ScreenHomeState extends State<ScreenHome>
-    with AfterLayoutMixin<ScreenHome> {
-  final ScrollController _scrollController = ScrollController();
+class _ScreenHomeState extends State<ScreenHome> {
+  final ScrollController _controller = ScrollController();
+  bool isScrolling = false;
 
   @override
   void initState() {
     super.initState();
+    _controller.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
+  _scrollListener() {
+    if (_controller.offset > 150) {
+      setState(() {
+        isScrolling = true;
+      });
+    } else {
+      setState(() {
+        isScrolling = false;
+      });
+    }
   }
 
   @override
@@ -32,9 +48,11 @@ class _ScreenHomeState extends State<ScreenHome>
     return Scaffold(
       backgroundColor: backgroundColor,
       body: CustomScrollView(
-        controller: _scrollController,
+        controller: _controller,
         slivers: [
-          const HomeAppBarWidget(),
+          HomeAppBarWidget(
+            isScrolling: isScrolling,
+          ),
           const SliverToBoxAdapter(
             child: Height8Widget(),
           ),
@@ -90,37 +108,42 @@ class _ScreenHomeState extends State<ScreenHome>
           ),
         ],
       ),
-      floatingActionButton: Container(
-        padding: const EdgeInsets.all(16),
-        width: 160,
-        decoration: const BoxDecoration(
-            color: darkBlueColor,
-            borderRadius: BorderRadius.all(Radius.circular(50))),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: const [
-            Icon(
-              Icons.qr_code,
-              color: textColorWhite,
-            ),
-            SizedBox(
-              width: 8,
-            ),
-            Text(
-              'Scan Any QR',
-              style:
-                  TextStyle(color: textColorWhite, fontWeight: FontWeight.bold),
+      floatingActionButton: isScrolling
+          ? AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              width: 60,
+              height: 60,
+              child: FloatingActionButton(
+                backgroundColor: darkBlueColor,
+                onPressed: () {},
+                child: const Icon(
+                  Icons.qr_code,
+                  color: textColorWhite,
+                ),
+              ),
             )
-          ],
-        ),
-      ),
+          : AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeIn,
+              width: 180,
+              height: 60,
+              child: FloatingActionButton.extended(
+                backgroundColor: darkBlueColor,
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.qr_code,
+                  color: textColorWhite,
+                ),
+                label: const Center(
+                  child: Text(
+                    "Scan Any QR",
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
-  }
-
-  @override
-  FutureOr<void> afterFirstLayout(BuildContext context) {
-    _scrollController.jumpTo(expandedHeight - collapsedHeight);
   }
 }
